@@ -6,4 +6,4 @@ flask_sqlalchemy
 flask_jwt_extended
 passlib
 flask_migrate
-guincorn
+gunicorn
