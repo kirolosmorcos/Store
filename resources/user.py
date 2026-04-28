@@ -1,8 +1,13 @@
-from flask import Flask,request
+import os
+
+from task import send_Registration_email
+
+from flask import Flask,request,current_app,jsonify
 
 from flask.views import MethodView
 from flask_smorest import Blueprint,abort
-from schema import UserSchema
+import resend
+from schema import UserRegisterSchema, UserSchema
 
 from models import UserModel
 
@@ -19,22 +24,26 @@ from blocklist import BLOCKLIST
 
 blp= Blueprint("users",__name__,description="Operations on users")
 
+
+
 @blp.route("/register")
 class UserRegister(MethodView):
-    @blp.arguments(UserSchema)
-    @blp.response(201,UserSchema)
+    @blp.arguments(UserRegisterSchema)
+    
     def post(self,user_data):
         user=UserModel(
             username=user_data["username"],
-            password=pbkdf2_sha256.hash(user_data["password"])
+            password=pbkdf2_sha256.hash(user_data["password"]),
+            email=user_data["email"]
         )
 
         try:
             db.session.add(user)
             db.session.commit()
-            return user
+            current_app.queue.enqueue(send_Registration_email,email=user.email,username=user.username)
+            return {"message":"User created successfully"},201
         except IntegrityError:
-            abort(400, message=f"user already exist")
+            abort(400, message=f"username or email already exist")
         except SQLAlchemyError:
             abort(400,message="Failed with registering user")
 
