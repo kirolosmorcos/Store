@@ -1,0 +1,6 @@
+worker:
+    build: .
+    container_name: rq_worker
+    command: rq worker --url $REDIS_URL emails
+    env_file:
+      - ./.env
